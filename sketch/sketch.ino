@@ -1,8 +1,157 @@
+#include "ScrapController.h"
+
+#define FRONT_LEFT_PIN_INTERRUPT 2
+#define FRONT_LEFT_PIN_CHECKER 4
+#define FRONT_RIGHT_PIN_INTERRUPT 3
+#define FRONT_RIGHT_PIN_CHECKER 5
+#define BACK_LEFT_PIN_INTERRUPT 18
+#define BACK_LEFT_PIN_CHECKER 16
+#define BACK_RIGHT_PIN_INTERRUPT 19
+#define BACK_RIGHT_PIN_CHECKER 17
+
+#define FRONT_LEFT_MOTOR_PWM 8
+#define FRONT_LEFT_MOTOR_PIN1 24
+#define FRONT_LEFT_MOTOR_PIN2 25
+#define FRONT_RIGHT_MOTOR_PWM 9
+#define FRONT_RIGHT_MOTOR_PIN1 22
+#define FRONT_RIGHT_MOTOR_PIN2 23
+#define BACK_LEFT_MOTOR_PWM 10
+#define BACK_LEFT_MOTOR_PIN1 34
+#define BACK_LEFT_MOTOR_PIN2 35
+#define BACK_RIGHT_MOTOR_PWM 11
+#define BACK_RIGHT_MOTOR_PIN1 32
+#define BACK_RIGHT_MOTOR_PIN2 33
+
+
+
+ScrapEncoder encoderFL = ScrapEncoder(FRONT_LEFT_PIN_INTERRUPT, FRONT_LEFT_PIN_CHECKER);
+ScrapEncoder encoderFR = ScrapEncoder(FRONT_RIGHT_PIN_INTERRUPT, FRONT_RIGHT_PIN_CHECKER);
+ScrapEncoder encoderBL = ScrapEncoder(BACK_LEFT_PIN_INTERRUPT, BACK_LEFT_PIN_CHECKER);
+ScrapEncoder encoderBR = ScrapEncoder(BACK_RIGHT_PIN_INTERRUPT, BACK_RIGHT_PIN_CHECKER);
+
+ScrapMotor motorFL = ScrapMotor(FRONT_LEFT_MOTOR_PIN1, FRONT_LEFT_MOTOR_PIN2, FRONT_LEFT_MOTOR_PWM);
+ScrapMotor motorFR = ScrapMotor(FRONT_RIGHT_MOTOR_PIN1, FRONT_RIGHT_MOTOR_PIN2, FRONT_RIGHT_MOTOR_PWM);
+ScrapMotor motorBL = ScrapMotor(BACK_LEFT_MOTOR_PIN1, BACK_LEFT_MOTOR_PIN2, BACK_LEFT_MOTOR_PWM, -1);
+ScrapMotor motorBR = ScrapMotor(BACK_RIGHT_MOTOR_PIN1, BACK_RIGHT_MOTOR_PIN2, BACK_RIGHT_MOTOR_PWM, -1);
+
+
+ScrapMotorControl speedFL = ScrapMotorControl(motorFL, encoderFL);
+ScrapMotorControl speedFR = ScrapMotorControl(motorFR, encoderFR);
+ScrapMotorControl speedBL = ScrapMotorControl(motorBL, encoderBL);
+ScrapMotorControl speedBR = ScrapMotorControl(motorBR, encoderBR);
+
+
+
+bool isMoving = false;
 
 void setup() {
-
+	Serial.begin(9600);
+	initEncoders();
+	speedFL.setControlEnc(2000);
+	speedFR.setControlEnc(-2000);
+	speedBL.setControlEnc(-2000);
+	speedBR.setControlEnc(2000);
+	unsigned long startTime = micros();
+	unsigned long currentTime = startTime;
+	while (currentTime - startTime < 1000000) {
+		performAllMovement();
+		delay(2);
+		currentTime = micros();
+	}
+	speedFL.setControlEnc(-2000);
+	speedFR.setControlEnc(2000);
+	speedBL.setControlEnc(2000);
+	speedBR.setControlEnc(-2000);
+	startTime = micros();
+	currentTime = startTime;
+	while (currentTime - startTime < 1000000) {
+		performAllMovement();
+		delay(2);
+		currentTime = micros();
+	}
+	printEncodersToSerial();
+	speedFL.stop();
+	speedFR.stop();
+	speedBL.stop();
+	speedBR.stop();
+	performAllMovement();
+	/*motorFL.setMotor(255);
+	motorBL.setMotor(255);
+	motorFR.setMotor(255);
+	motorBR.setMotor(255);
+	delay(1000);
+	printEncodersToSerial();
+	motorFL.setMotor(255);
+	motorBL.setMotor(255);
+	motorFR.setMotor(255);
+	motorBR.setMotor(255);
+	delay(1000);
+	printEncodersToSerial();
+	motorFL.stop();
+	motorBL.stop();
+	motorFR.stop();
+	motorBR.stop();
+	printEncodersToSerial();*/
 }
 
 void loop() {
+	delay(1000);
+	printEncodersToSerial();
+}
 
+void printEncodersToSerial() {
+	Serial.print("FL: " + (String)encoderFL.getCount());
+	Serial.print("	FR: " + (String)encoderFR.getCount());
+	Serial.print("	BL: " + (String)encoderBL.getCount());
+	Serial.println("	BR: " + (String)encoderBR.getCount());
+}
+
+void performAllMovement() {
+	speedFL.performMovement();
+	speedFR.performMovement();
+	speedBL.performMovement();
+	speedBR.performMovement();
+}
+
+void initEncoders() {
+	attachInterrupt(digitalPinToInterrupt(FRONT_LEFT_PIN_INTERRUPT),checkEncoderFL,CHANGE);
+	attachInterrupt(digitalPinToInterrupt(FRONT_RIGHT_PIN_INTERRUPT),checkEncoderFR,CHANGE);
+	attachInterrupt(digitalPinToInterrupt(BACK_LEFT_PIN_INTERRUPT),checkEncoderBL,CHANGE);
+	attachInterrupt(digitalPinToInterrupt(BACK_RIGHT_PIN_INTERRUPT),checkEncoderBR,CHANGE);
+}
+
+void checkEncoderFL() {
+	if (digitalRead(FRONT_LEFT_PIN_INTERRUPT) == digitalRead(FRONT_LEFT_PIN_CHECKER)) {
+		encoderFL.decrementCount();
+	}
+	else {
+		encoderFL.incrementCount();
+	}
+}
+
+void checkEncoderFR() {
+	if (digitalRead(FRONT_RIGHT_PIN_INTERRUPT) == digitalRead(FRONT_RIGHT_PIN_CHECKER)) {
+		encoderFR.incrementCount();
+	}
+	else {
+		encoderFR.decrementCount();
+	}
+}
+
+void checkEncoderBL() {
+	if (digitalRead(BACK_LEFT_PIN_INTERRUPT) == digitalRead(BACK_LEFT_PIN_CHECKER)) {
+		encoderBL.decrementCount();
+	}
+	else {
+		encoderBL.incrementCount();
+	}
+}
+
+void checkEncoderBR() {
+	if (digitalRead(BACK_RIGHT_PIN_INTERRUPT) == digitalRead(BACK_RIGHT_PIN_CHECKER)) {
+		encoderBR.incrementCount();
+	}
+	else {
+		encoderBR.decrementCount();
+	}
 }
