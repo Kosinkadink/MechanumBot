@@ -12,7 +12,7 @@ class MechanumController {
 		long translate_y = 0;
 		long rotate = 0;
 		long maximum_val = 32768;
-		long deadzone = 12000;
+		long deadzone = 0;
 		ScrapMotorControl* speedFL;
 		ScrapMotorControl* speedFR;
 		ScrapMotorControl* speedBL;

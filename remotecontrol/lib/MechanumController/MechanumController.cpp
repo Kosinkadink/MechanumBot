@@ -23,6 +23,7 @@ void MechanumController::performMovement() {
 void MechanumController::inputControlValues() {
 	// initialize raw values to consider
 	int maxRawValue;
+	int minMaxEncSpeedDiff;
 	int rawValueFL, rawValueFR, rawValueBL, rawValueBR;
 	int encValueFL, encValueFR, encValueBL, encValueBR;
 	long norm_maximum_val = maximum_val-deadzone;
@@ -45,27 +46,41 @@ void MechanumController::inputControlValues() {
 	rawValueBR += proc_translate_y + proc_translate_x - proc_rotate;
 	// figure out max raw value
 	maxRawValue = max(max(abs(rawValueFL),abs(rawValueFR)),max(abs(rawValueBL),abs(rawValueBR)));
-	// calculate enc speeds and assign to speed controllers
-	encValueFL = (int)(((float)rawValueFL/maxRawValue)*maxEncSpeed);
-	if (abs(encValueFL) >= minEncSpeed)
+	minMaxEncSpeedDiff = maxEncSpeed - minEncSpeed;
+	// calculate enc speeds and assign to speed controllers if the raw values were nonzero
+	// FRONT LEFT
+	if (rawValueFL) {
+		encValueFL = (int)(((float)rawValueFL/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
 		speedFL->setControlEnc(encValueFL);
-	else
+	}
+	else { 
 		speedFL->stop();
-	encValueFR = (int)(((float)rawValueFR/maxRawValue)*maxEncSpeed);
-	if (abs(encValueFR) >= minEncSpeed)
+	}
+	// FRONT RIGHT
+	if (rawValueFR) {
+		encValueFR = (int)(((float)rawValueFR/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
 		speedFR->setControlEnc(encValueFR);
-	else
+	}
+	else {
 		speedFR->stop();
-	encValueBL = (int)(((float)rawValueBL/maxRawValue)*maxEncSpeed);
-	if (abs(encValueBL) >= minEncSpeed)
+	}
+	// BACK LEFT
+	if (rawValueBL) {
+		encValueBL = (int)(((float)rawValueBL/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
 		speedBL->setControlEnc(encValueBL);
-	else
+	}
+	else {
 		speedBL->stop();
-	encValueBR = (int)(((float)rawValueBR/maxRawValue)*maxEncSpeed);
-	if (abs(encValueBR) >= minEncSpeed)
+	}
+	// BACK RIGHT
+	if (rawValueBR) {
+		encValueBR = (int)(((float)rawValueBR/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
 		speedBR->setControlEnc(encValueBR);
-	else
+	}
+	else {
 		speedBR->stop();
+	}
+	// print values for debug purposes
 	Serial.print(encValueFL);
 	Serial.print(" ");
 	Serial.print(encValueFR);
