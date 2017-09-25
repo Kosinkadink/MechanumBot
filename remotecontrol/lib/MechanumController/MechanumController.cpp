@@ -25,8 +25,8 @@ void MechanumController::inputControlValues() {
 	int maxRawValue;
 	int rawValueFL, rawValueFR, rawValueBL, rawValueBR;
 	int encValueFL, encValueFR, encValueBL, encValueBR;
-	int minMaxEncSpeedDiff = maxEncSpeed - minEncSpeed;
 	long norm_maximum_val = maximum_val-deadzone;
+	long proc_maximum_val = 1024;
 	// check if the movements are zero
 	if (!translate_x && !translate_y && !rotate) {
 		speedFL->stop();
@@ -35,9 +35,9 @@ void MechanumController::inputControlValues() {
 		speedBR->stop();
 		return;
 	}
-	int proc_translate_x = map(translate_x, -norm_maximum_val, norm_maximum_val, -1024, 1024);
-	int proc_translate_y = map(translate_y, -norm_maximum_val, norm_maximum_val, -1024, 1024);
-	int proc_rotate = map(rotate, -norm_maximum_val, norm_maximum_val, -1024, 1024);
+	int proc_translate_x = map(translate_x, -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
+	int proc_translate_y = map(translate_y, -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
+	int proc_rotate = map(rotate, -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
 	rawValueFL = rawValueFR = rawValueBL = rawValueBR = 0;
 	// translation and rotation consideration
 	rawValueFL += proc_translate_y + proc_translate_x + proc_rotate;
@@ -47,8 +47,8 @@ void MechanumController::inputControlValues() {
 	// figure out max raw value; this will be used to scale the speed of the motors if max is greater than a motor can output
 	maxRawValue = max(max(abs(rawValueFL),abs(rawValueFR)),max(abs(rawValueBL),abs(rawValueBR)));
 	// if max value does not exceed the normalized allowed maximum value, use the normalized max as max raw value
-	if (maxRawValue < norm_maximum_val) {
-		maxRawValue = norm_maximum_val;
+	if (maxRawValue < proc_maximum_val) {
+		maxRawValue = proc_maximum_val;
 	}
 	// calculate enc speeds and assign to speed controllers if the raw values were nonzero
 	// FRONT LEFT
