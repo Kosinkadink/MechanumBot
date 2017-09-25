@@ -25,6 +25,7 @@ void MechanumController::inputControlValues() {
 	int maxRawValue;
 	int rawValueFL, rawValueFR, rawValueBL, rawValueBR;
 	int encValueFL, encValueFR, encValueBL, encValueBR;
+	long norm_maximum_val = maximum_val-deadzone;
 	// check if the movements are zero
 	if (!translate_x && !translate_y && !rotate) {
 		speedFL->stop();
@@ -33,9 +34,9 @@ void MechanumController::inputControlValues() {
 		speedBR->stop();
 		return;
 	}
-	int proc_translate_x = map(translate_x, -maximum_val, maximum_val, -1024, 1024);
-	int proc_translate_y = map(translate_y, -maximum_val, maximum_val, -1024, 1024);
-	int proc_rotate = map(rotate, -maximum_val, maximum_val, -1024, 1024);
+	int proc_translate_x = map(translate_x, -norm_maximum_val, norm_maximum_val, -1024, 1024);
+	int proc_translate_y = map(translate_y, -norm_maximum_val, norm_maximum_val, -1024, 1024);
+	int proc_rotate = map(rotate, -norm_maximum_val, norm_maximum_val, -1024, 1024);
 	rawValueFL = rawValueFR = rawValueBL = rawValueBR = 0;
 	// translation and rotation consideration
 	rawValueFL += proc_translate_y + proc_translate_x + proc_rotate;
@@ -73,3 +74,34 @@ void MechanumController::inputControlValues() {
 	Serial.print(" ");
 	Serial.println(encValueBR);
 }
+
+void MechanumController::setTranslateX(long val) {
+	if (val < 0) {
+		val += deadzone;
+	}
+	else if (val > 0) {
+		val -= deadzone;
+	}
+	translate_x = val;
+}
+
+void MechanumController::setTranslateY(long val) {
+	if (val < 0) {
+		val += deadzone;
+	}
+	else if (val > 0) {
+		val -= deadzone;
+	}
+	translate_y = val;
+}
+
+void MechanumController::setRotate(long val) {
+	if (val < 0) {
+		val += deadzone;
+	}
+	else if (val > 0) {
+		val -= deadzone;
+	}
+	rotate = val;
+}
+

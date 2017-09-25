@@ -12,6 +12,7 @@ class MechanumController {
 		long translate_y = 0;
 		long rotate = 0;
 		long maximum_val = 32768;
+		long deadzone = 12000;
 		ScrapMotorControl* speedFL;
 		ScrapMotorControl* speedFR;
 		ScrapMotorControl* speedBL;
@@ -23,11 +24,13 @@ class MechanumController {
 		void attachSpeedBR(ScrapMotorControl& speed_control) { speedBR = &speed_control; };
 		MechanumController();
 		MechanumController(ScrapMotorControl& speed_FL, ScrapMotorControl& speed_FR, ScrapMotorControl& speed_BL, ScrapMotorControl& speed_BR);
-		void setTranslateX(long val) { translate_x = val; };
-		void setTranslateY(long val) { translate_y = val; };
-		void setRotate(long val) { rotate = val; };
+		void setTranslateX(long val);
+		void setTranslateY(long val);
+		void setRotate(long val);
 		void performMovement();
 		void inputControlValues();
+		void setMaximumValue(long value) { maximum_val = value; };
+		void setDeadzone(long value) { deadzone = value; };
 
 };
 

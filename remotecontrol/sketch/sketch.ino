@@ -10,6 +10,7 @@
 
 #define CHECK_ZONE 5000
 const int deadzone = 12000;
+const long max_stick_value = 32768;
 
 #define FRONT_LEFT_PIN_INTERRUPT 2
 #define FRONT_LEFT_PIN_CHECKER 14
@@ -56,8 +57,9 @@ XBOXRECV Xbox(&Usb);
 
 
 void setup() {
+  mechControl.setMaximumValue(max_stick_value);
+  mechControl.setDeadzone(deadzone);
   Serial.begin(115200);
-  Serial1.begin(115200);
   #if !defined(__MIPSEL__)
     while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
   #endif
