@@ -1,4 +1,15 @@
+#include <XBOXRECV.h>
 #include "ScrapController.h"
+#include "MechanumController.h"
+
+// Satisfy the IDE, which needs to see the include statment in the ino too.
+#ifdef dobogusinclude
+#include <spi4teensy3.h>
+#include <SPI.h>
+#endif
+
+#define CHECK_ZONE 5000
+const int deadzone = 12000;
 
 #define FRONT_LEFT_PIN_INTERRUPT 2
 #define FRONT_LEFT_PIN_CHECKER 14
@@ -18,11 +29,9 @@
 #define BACK_LEFT_MOTOR_PWM 8
 #define BACK_LEFT_MOTOR_PIN1 34
 #define BACK_LEFT_MOTOR_PIN2 35
-#define BACK_RIGHT_MOTOR_PWM 9
+#define BACK_RIGHT_MOTOR_PWM 6
 #define BACK_RIGHT_MOTOR_PIN1 32
 #define BACK_RIGHT_MOTOR_PIN2 33
-
-
 
 ScrapEncoder encoderFL = ScrapEncoder(FRONT_LEFT_PIN_INTERRUPT, FRONT_LEFT_PIN_CHECKER);
 ScrapEncoder encoderFR = ScrapEncoder(FRONT_RIGHT_PIN_INTERRUPT, FRONT_RIGHT_PIN_CHECKER);
@@ -34,124 +43,140 @@ ScrapMotor motorFR = ScrapMotor(FRONT_RIGHT_MOTOR_PIN1, FRONT_RIGHT_MOTOR_PIN2, 
 ScrapMotor motorBL = ScrapMotor(BACK_LEFT_MOTOR_PIN1, BACK_LEFT_MOTOR_PIN2, BACK_LEFT_MOTOR_PWM, -1);
 ScrapMotor motorBR = ScrapMotor(BACK_RIGHT_MOTOR_PIN1, BACK_RIGHT_MOTOR_PIN2, BACK_RIGHT_MOTOR_PWM, -1);
 
-
 ScrapMotorControl speedFL = ScrapMotorControl(motorFL, encoderFL);
 ScrapMotorControl speedFR = ScrapMotorControl(motorFR, encoderFR);
 ScrapMotorControl speedBL = ScrapMotorControl(motorBL, encoderBL);
 ScrapMotorControl speedBR = ScrapMotorControl(motorBR, encoderBR);
 
+MechanumController mechControl = MechanumController(speedFL,speedFR,speedBL,speedBR);
 
 
-bool isMoving = false;
+USB Usb;
+XBOXRECV Xbox(&Usb);
+
 
 void setup() {
-	Serial.begin(9600);
-	initEncoders();
-	speedFL.setControlEnc(2000);
-	speedFR.setControlEnc(-2000);
-	speedBL.setControlEnc(-2000);
-	speedBR.setControlEnc(2000);
-	unsigned long startTime = micros();
-	unsigned long currentTime = startTime;
-	while (currentTime - startTime < 1000000) {
-		performAllMovement();
-		delay(2);
-		currentTime = micros();
-	}
-	speedFL.setControlEnc(-2000);
-	speedFR.setControlEnc(2000);
-	speedBL.setControlEnc(2000);
-	speedBR.setControlEnc(-2000);
-	startTime = micros();
-	currentTime = startTime;
-	while (currentTime - startTime < 1000000) {
-		performAllMovement();
-		delay(2);
-		currentTime = micros();
-	}
-	printEncodersToSerial();
-	speedFL.stop();
-	speedFR.stop();
-	speedBL.stop();
-	speedBR.stop();
-	performAllMovement();
-	/*motorFL.setMotor(255);
-	motorBL.setMotor(255);
-	motorFR.setMotor(255);
-	motorBR.setMotor(255);
-	delay(1000);
-	printEncodersToSerial();
-	motorFL.setMotor(255);
-	motorBL.setMotor(255);
-	motorFR.setMotor(255);
-	motorBR.setMotor(255);
-	delay(1000);
-	printEncodersToSerial();
-	motorFL.stop();
-	motorBL.stop();
-	motorFR.stop();
-	motorBR.stop();
-	printEncodersToSerial();*/
+  Serial.begin(115200);
+  Serial1.begin(115200);
+  #if !defined(__MIPSEL__)
+    while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
+  #endif
+  if (Usb.Init() == -1) {
+    Serial.print(F("\r\nOSC did not start"));
+    while (1); //halt
+  }
+  Serial.print(F("\r\nXbox Wireless Receiver Library Started"));
 }
 
 void loop() {
-	delay(1000);
-	printEncodersToSerial();
-}
+  mechControl.performMovement();
+  Usb.Task();
+  if (Xbox.XboxReceiverConnected) {
+    for (uint8_t i = 0; i < 4; i++) {
+      if (Xbox.Xbox360Connected[i]) {
+        if (Xbox.getButtonPress(L2, i) || Xbox.getButtonPress(R2, i)) {
+          Serial.print("L2: ");
+          Serial.print(Xbox.getButtonPress(L2, i));
+          Serial.print("\tR2: ");
+          Serial.println(Xbox.getButtonPress(R2, i));
+          //Xbox.setRumbleOn(Xbox.getButtonPress(L2, i), Xbox.getButtonPress(R2, i), i);
+        }
 
-void printEncodersToSerial() {
-	Serial.print("FL: " + (String)encoderFL.getCount());
-	Serial.print("	FR: " + (String)encoderFR.getCount());
-	Serial.print("	BL: " + (String)encoderBL.getCount());
-	Serial.println("	BR: " + (String)encoderBR.getCount());
-}
+        // movement code
 
-void performAllMovement() {
-	speedFL.performMovement();
-	speedFR.performMovement();
-	speedBL.performMovement();
-	speedBR.performMovement();
-}
+        long leftYVal = Xbox.getAnalogHat(LeftHatY, i);
+        long leftXVal = Xbox.getAnalogHat(LeftHatX, i);
+        long rightXVal = Xbox.getAnalogHat(RightHatX, i);
 
-void initEncoders() {
-	attachInterrupt(digitalPinToInterrupt(FRONT_LEFT_PIN_INTERRUPT),checkEncoderFL,CHANGE);
-	attachInterrupt(digitalPinToInterrupt(FRONT_RIGHT_PIN_INTERRUPT),checkEncoderFR,CHANGE);
-	attachInterrupt(digitalPinToInterrupt(BACK_LEFT_PIN_INTERRUPT),checkEncoderBL,CHANGE);
-	attachInterrupt(digitalPinToInterrupt(BACK_RIGHT_PIN_INTERRUPT),checkEncoderBR,CHANGE);
-}
+        if (abs(leftYVal) > CHECK_ZONE || abs(leftXVal) > CHECK_ZONE || abs(rightXVal) > CHECK_ZONE) {
+          // rotation
+          if (abs(rightXVal) > deadzone) {
+            mechControl.setRotate(Xbox.getAnalogHat(RightHatX, i));
+          }
+          else {
+            mechControl.setRotate(0);
+          }
+          // vertical translation
+          if (abs(leftYVal) > deadzone) {
+            mechControl.setTranslateY(Xbox.getAnalogHat(LeftHatY, i));
+          }
+          else {
+            mechControl.setTranslateY(0);
+          }
+          // horizontal translation
+          if (abs(leftXVal) > deadzone) {
+            mechControl.setTranslateX(Xbox.getAnalogHat(LeftHatX, i));
+          }
+          else {
+            mechControl.setTranslateX(0);
+          }
+          
+        }
+        else {
+          mechControl.setRotate(0);
+          mechControl.setTranslateX(0);
+          mechControl.setTranslateY(0);
+        }
 
-void checkEncoderFL() {
-	if (digitalRead(FRONT_LEFT_PIN_INTERRUPT) == digitalRead(FRONT_LEFT_PIN_CHECKER)) {
-		encoderFL.decrementCount();
-	}
-	else {
-		encoderFL.incrementCount();
-	}
-}
+        if (Xbox.getButtonClick(UP, i)) {
+          Xbox.setLedOn(LED1, i);
+          Serial.println(F("Up"));
+        }
+        if (Xbox.getButtonClick(DOWN, i)) {
+          Xbox.setLedOn(LED4, i);
+          Serial.println(F("Down"));
+        }
+        if (Xbox.getButtonClick(LEFT, i)) {
+          Xbox.setLedOn(LED3, i);
+          Serial.println(F("Left"));
+        }
+        if (Xbox.getButtonClick(RIGHT, i)) {
+          Xbox.setLedOn(LED2, i);
+          Serial.println(F("Right"));
+        }
 
-void checkEncoderFR() {
-	if (digitalRead(FRONT_RIGHT_PIN_INTERRUPT) == digitalRead(FRONT_RIGHT_PIN_CHECKER)) {
-		encoderFR.incrementCount();
-	}
-	else {
-		encoderFR.decrementCount();
-	}
-}
+        if (Xbox.getButtonClick(START, i)) {
+          Xbox.setLedMode(ALTERNATING, i);
+          Serial.println(F("Start"));
+        }
+        if (Xbox.getButtonClick(BACK, i)) {
+          Xbox.setLedBlink(ALL, i);
+          Serial.println(F("Back"));
+        }
+        if (Xbox.getButtonClick(L3, i))
+          Serial.println(F("L3"));
+        if (Xbox.getButtonClick(R3, i))
+          Serial.println(F("R3"));
 
-void checkEncoderBL() {
-	if (digitalRead(BACK_LEFT_PIN_INTERRUPT) == digitalRead(BACK_LEFT_PIN_CHECKER)) {
-		encoderBL.decrementCount();
-	}
-	else {
-		encoderBL.incrementCount();
-	}
-}
+        if (Xbox.getButtonClick(L1, i))
+          Serial.println(F("L1"));
+        if (Xbox.getButtonClick(R1, i))
+          Serial.println(F("R1"));
+        if (Xbox.getButtonClick(XBOX, i)) {
+          Xbox.setLedMode(ROTATING, i);
+          Serial.print(F("Xbox (Battery: "));
+          Serial.print(Xbox.getBatteryLevel(i)); // The battery level in the range 0-3
+          Serial.println(F(")"));
+        }
+        if (Xbox.getButtonClick(SYNC, i)) {
+          Serial.println(F("Sync"));
+          Xbox.disconnect(i);
+        }
 
-void checkEncoderBR() {
-	if (digitalRead(BACK_RIGHT_PIN_INTERRUPT) == digitalRead(BACK_RIGHT_PIN_CHECKER)) {
-		encoderBR.incrementCount();
-	}
-	else {
-		encoderBR.decrementCount();
-	}
+        if (Xbox.getButtonClick(A, i))
+          Serial.println(F("A"));
+        if (Xbox.getButtonClick(B, i))
+          Serial.println(F("B"));
+        // stop all movement
+        if (Xbox.getButtonClick(X, i)) {
+          mechControl.setRotate(0);
+          mechControl.setTranslateX(0);
+          mechControl.setTranslateY(0);
+        }
+
+        if (Xbox.getButtonClick(Y, i))
+          Serial.println(F("Y"));
+      }
+    }
+  }
 }
