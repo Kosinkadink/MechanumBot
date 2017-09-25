@@ -23,9 +23,9 @@ void MechanumController::performMovement() {
 void MechanumController::inputControlValues() {
 	// initialize raw values to consider
 	int maxRawValue;
-	int minMaxEncSpeedDiff;
 	int rawValueFL, rawValueFR, rawValueBL, rawValueBR;
 	int encValueFL, encValueFR, encValueBL, encValueBR;
+	int minMaxEncSpeedDiff = maxEncSpeed - minEncSpeed;
 	long norm_maximum_val = maximum_val-deadzone;
 	// check if the movements are zero
 	if (!translate_x && !translate_y && !rotate) {
@@ -44,13 +44,16 @@ void MechanumController::inputControlValues() {
 	rawValueFR += proc_translate_y - proc_translate_x - proc_rotate;
 	rawValueBL += proc_translate_y - proc_translate_x + proc_rotate;
 	rawValueBR += proc_translate_y + proc_translate_x - proc_rotate;
-	// figure out max raw value
+	// figure out max raw value; this will be used to scale the speed of the motors if max is greater than a motor can output
 	maxRawValue = max(max(abs(rawValueFL),abs(rawValueFR)),max(abs(rawValueBL),abs(rawValueBR)));
-	minMaxEncSpeedDiff = maxEncSpeed - minEncSpeed;
+	// if max value does not exceed the normalized allowed maximum value, use the normalized max as max raw value
+	if (maxRawValue < norm_maximum_val) {
+		maxRawValue = norm_maximum_val;
+	}
 	// calculate enc speeds and assign to speed controllers if the raw values were nonzero
 	// FRONT LEFT
 	if (rawValueFL) {
-		encValueFL = (int)(((float)rawValueFL/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
+		encValueFL = map(rawValueFL,0,maxRawValue,minEncSpeed,maxEncSpeed);
 		speedFL->setControlEnc(encValueFL);
 	}
 	else { 
@@ -58,7 +61,7 @@ void MechanumController::inputControlValues() {
 	}
 	// FRONT RIGHT
 	if (rawValueFR) {
-		encValueFR = (int)(((float)rawValueFR/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
+		encValueFR = map(rawValueFR,0,maxRawValue,minEncSpeed,maxEncSpeed);
 		speedFR->setControlEnc(encValueFR);
 	}
 	else {
@@ -66,7 +69,7 @@ void MechanumController::inputControlValues() {
 	}
 	// BACK LEFT
 	if (rawValueBL) {
-		encValueBL = (int)(((float)rawValueBL/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
+		encValueBL = map(rawValueBL,0,maxRawValue,minEncSpeed,maxEncSpeed);
 		speedBL->setControlEnc(encValueBL);
 	}
 	else {
@@ -74,7 +77,7 @@ void MechanumController::inputControlValues() {
 	}
 	// BACK RIGHT
 	if (rawValueBR) {
-		encValueBR = (int)(((float)rawValueBR/maxRawValue)*minMaxEncSpeedDiff) + minEncSpeed;
+		encValueBR = map(rawValueBR,0,maxRawValue,minEncSpeed,maxEncSpeed);
 		speedBR->setControlEnc(encValueBR);
 	}
 	else {
