@@ -18,13 +18,6 @@ void MechanumController::performMovement() {
 	speedFR->performMovement();
 	speedBL->performMovement();
 	speedBR->performMovement();
-	Serial.print(speedFL->getSpeedEncGoal());
-	Serial.print(" ");
-	Serial.print(speedFR->getSpeedEncGoal());
-	Serial.print(" ");
-	Serial.print(speedBL->getSpeedEncGoal());
-	Serial.print(" ");
-	Serial.println(speedBR->getSpeedEncGoal());
 }
 
 void MechanumController::inputControlValues() {
