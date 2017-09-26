@@ -27,7 +27,7 @@ const long max_stick_value = 32768;
 #define FRONT_RIGHT_MOTOR_PWM 5
 #define FRONT_RIGHT_MOTOR_PIN1 22
 #define FRONT_RIGHT_MOTOR_PIN2 23
-#define BACK_LEFT_MOTOR_PWM 8
+#define BACK_LEFT_MOTOR_PWM 12
 #define BACK_LEFT_MOTOR_PIN1 34
 #define BACK_LEFT_MOTOR_PIN2 35
 #define BACK_RIGHT_MOTOR_PWM 6
@@ -55,8 +55,10 @@ MechanumController mechControl = MechanumController(speedFL,speedFR,speedBL,spee
 USB Usb;
 XBOXRECV Xbox(&Usb);
 
+unsigned long startTime = micros();
 
 void setup() {
+  initEncoders();
   mechControl.setMaximumValue(max_stick_value);
   mechControl.setDeadzone(deadzone);
   Serial.begin(115200);
@@ -71,7 +73,11 @@ void setup() {
 }
 
 void loop() {
-  mechControl.performMovement();
+  unsigned long currentTime = micros();
+  if (currentTime - startTime > 2000) {
+    mechControl.performMovement();
+    startTime = currentTime;
+  }
   Usb.Task();
   if (Xbox.XboxReceiverConnected) {
     for (uint8_t i = 0; i < 4; i++) {
@@ -181,4 +187,47 @@ void loop() {
       }
     }
   }
+}
+
+void initEncoders() {
+	attachInterrupt(digitalPinToInterrupt(FRONT_LEFT_PIN_INTERRUPT),checkEncoderFL,CHANGE);
+	attachInterrupt(digitalPinToInterrupt(FRONT_RIGHT_PIN_INTERRUPT),checkEncoderFR,CHANGE);
+	attachInterrupt(digitalPinToInterrupt(BACK_LEFT_PIN_INTERRUPT),checkEncoderBL,CHANGE);
+	attachInterrupt(digitalPinToInterrupt(BACK_RIGHT_PIN_INTERRUPT),checkEncoderBR,CHANGE);
+}
+
+void checkEncoderFL() {
+	if (digitalRead(FRONT_LEFT_PIN_INTERRUPT) == digitalRead(FRONT_LEFT_PIN_CHECKER)) {
+		encoderFL.decrementCount();
+	}
+	else {
+		encoderFL.incrementCount();
+	}
+}
+
+void checkEncoderFR() {
+	if (digitalRead(FRONT_RIGHT_PIN_INTERRUPT) == digitalRead(FRONT_RIGHT_PIN_CHECKER)) {
+		encoderFR.incrementCount();
+	}
+	else {
+		encoderFR.decrementCount();
+	}
+}
+
+void checkEncoderBL() {
+	if (digitalRead(BACK_LEFT_PIN_INTERRUPT) == digitalRead(BACK_LEFT_PIN_CHECKER)) {
+		encoderBL.decrementCount();
+	}
+	else {
+		encoderBL.incrementCount();
+	}
+}
+
+void checkEncoderBR() {
+	if (digitalRead(BACK_RIGHT_PIN_INTERRUPT) == digitalRead(BACK_RIGHT_PIN_CHECKER)) {
+		encoderBR.incrementCount();
+	}
+	else {
+		encoderBR.decrementCount();
+	}
 }

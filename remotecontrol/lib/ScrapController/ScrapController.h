@@ -66,7 +66,9 @@ class ScrapMotorControl {
 		void setSpeed(float newSpeed); // set direction only
 		void setSpeedEnc(int encPerSec) { setSpeed(convertToSpeed(encPerSec)); };
 		void setMinSpeed(float newMin) { minSpeed = newMin; };
+		void setMinSpeedEnc(float newMinEnc) { setMinSpeed(convertToSpeed(newMinEnc)); };
 		void setMaxSpeed(float newMax) { maxSpeed = newMax; };
+		void setMaxSpeedEnc(float newMaxEnc) { setMaxSpeed(convertToSpeed(newMaxEnc)); };
 		void incrementSpeed(int speedEncDiff);
 		void decrementSpeed(int speedEncDiff);
 		float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
@@ -76,8 +78,10 @@ class ScrapMotorControl {
 		void reset();
 		void stop();
 		long getCount() { return encoder->getCount(); };
+		int getSpeedEnc() { return prevSpeed*1000000; };
 		float getSpeed(); // returns speed
 		float getSpeedGoal() { return speedGoal; }; // return speed goal
+		int getSpeedEncGoal() { return getSpeedGoal()*1000000; };
 		unsigned long getTime();
 		void performMovement();
 		void attachMotor(ScrapMotor& mot) { motor = &mot; };

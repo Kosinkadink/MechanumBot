@@ -7,7 +7,7 @@
 class MechanumController {
 	private:
 		int minEncSpeed = 100;
-		int maxEncSpeed = 2000;
+		int maxEncSpeed = 2500;
 		long translate_x = 0;
 		long translate_y = 0;
 		long rotate = 0;

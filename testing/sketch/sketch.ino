@@ -47,10 +47,10 @@ bool isMoving = false;
 void setup() {
 	Serial.begin(9600);
 	initEncoders();
-	speedFL.setControlEnc(2000);
-	speedFR.setControlEnc(-2000);
-	speedBL.setControlEnc(-2000);
-	speedBR.setControlEnc(2000);
+	speedFL.setControlEnc(500);
+	speedFR.setControlEnc(-500);
+	speedBL.setControlEnc(-500);
+	speedBR.setControlEnc(500);
 	unsigned long startTime = micros();
 	unsigned long currentTime = startTime;
 	while (currentTime - startTime < 1000000) {
@@ -58,10 +58,10 @@ void setup() {
 		delay(2);
 		currentTime = micros();
 	}
-	speedFL.setControlEnc(-2000);
-	speedFR.setControlEnc(2000);
-	speedBL.setControlEnc(2000);
-	speedBR.setControlEnc(-2000);
+	speedFL.setControlEnc(-500);
+	speedFR.setControlEnc(500);
+	speedBL.setControlEnc(500);
+	speedBR.setControlEnc(-500);
 	startTime = micros();
 	currentTime = startTime;
 	while (currentTime - startTime < 1000000) {

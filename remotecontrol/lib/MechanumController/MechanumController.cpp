@@ -18,6 +18,13 @@ void MechanumController::performMovement() {
 	speedFR->performMovement();
 	speedBL->performMovement();
 	speedBR->performMovement();
+	Serial.print(speedFL->getSpeedEncGoal());
+	Serial.print(" ");
+	Serial.print(speedFR->getSpeedEncGoal());
+	Serial.print(" ");
+	Serial.print(speedBL->getSpeedEncGoal());
+	Serial.print(" ");
+	Serial.println(speedBR->getSpeedEncGoal());
 }
 
 void MechanumController::inputControlValues() {
@@ -35,9 +42,9 @@ void MechanumController::inputControlValues() {
 		speedBR->stop();
 		return;
 	}
-	int proc_translate_x = map(translate_x, -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
-	int proc_translate_y = map(translate_y, -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
-	int proc_rotate = map(rotate, -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
+	int proc_translate_x = (abs(translate_x)/translate_x)*map(abs(translate_x), -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
+	int proc_translate_y = (abs(translate_y)/translate_y)*map(abs(translate_y), -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
+	int proc_rotate = (abs(rotate)/rotate)*map(abs(rotate), -norm_maximum_val, norm_maximum_val, -proc_maximum_val, proc_maximum_val);
 	rawValueFL = rawValueFR = rawValueBL = rawValueBR = 0;
 	// translation and rotation consideration
 	rawValueFL += proc_translate_y + proc_translate_x + proc_rotate;
@@ -51,46 +58,27 @@ void MechanumController::inputControlValues() {
 		maxRawValue = proc_maximum_val;
 	}
 	// calculate enc speeds and assign to speed controllers if the raw values were nonzero
+	// if the raw values were negative, account for the mapping error
 	// FRONT LEFT
-	if (rawValueFL) {
-		encValueFL = map(rawValueFL,0,maxRawValue,minEncSpeed,maxEncSpeed);
-		speedFL->setControlEnc(encValueFL);
-	}
-	else { 
-		speedFL->stop();
-	}
+	encValueFL = (abs(rawValueFL)/rawValueFL)*map(abs(rawValueFL),0,maxRawValue,minEncSpeed,maxEncSpeed);
+	speedFL->setControlEnc(encValueFL);
 	// FRONT RIGHT
-	if (rawValueFR) {
-		encValueFR = map(rawValueFR,0,maxRawValue,minEncSpeed,maxEncSpeed);
-		speedFR->setControlEnc(encValueFR);
-	}
-	else {
-		speedFR->stop();
-	}
+	encValueFR = (abs(rawValueFR)/rawValueFR)*map(abs(rawValueFR),0,maxRawValue,minEncSpeed,maxEncSpeed);
+	speedFR->setControlEnc(encValueFR);
 	// BACK LEFT
-	if (rawValueBL) {
-		encValueBL = map(rawValueBL,0,maxRawValue,minEncSpeed,maxEncSpeed);
-		speedBL->setControlEnc(encValueBL);
-	}
-	else {
-		speedBL->stop();
-	}
+	encValueBL = (abs(rawValueBL)/rawValueBL)*map(abs(rawValueBL),0,maxRawValue,minEncSpeed,maxEncSpeed);
+	speedBL->setControlEnc(encValueBL);
 	// BACK RIGHT
-	if (rawValueBR) {
-		encValueBR = map(rawValueBR,0,maxRawValue,minEncSpeed,maxEncSpeed);
-		speedBR->setControlEnc(encValueBR);
-	}
-	else {
-		speedBR->stop();
-	}
+	encValueBR = (abs(rawValueBR)/rawValueBR)*map(abs(rawValueBR),0,maxRawValue,minEncSpeed,maxEncSpeed);
+	speedBR->setControlEnc(encValueBR);
 	// print values for debug purposes
-	Serial.print(encValueFL);
+	/*Serial.print(encValueFL);
 	Serial.print(" ");
 	Serial.print(encValueFR);
 	Serial.print(" ");
 	Serial.print(encValueBL);
 	Serial.print(" ");
-	Serial.println(encValueBR);
+	Serial.println(encValueBR);*/
 }
 
 void MechanumController::setTranslateX(long val) {
