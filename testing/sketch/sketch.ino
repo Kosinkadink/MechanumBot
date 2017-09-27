@@ -121,37 +121,17 @@ void initEncoders() {
 }
 
 void checkEncoderFL() {
-	if (digitalRead(FRONT_LEFT_PIN_INTERRUPT) == digitalRead(FRONT_LEFT_PIN_CHECKER)) {
-		encoderFL.decrementCount();
-	}
-	else {
-		encoderFL.incrementCount();
-	}
+	encoderFL.checkEncoderFlipped();
 }
 
 void checkEncoderFR() {
-	if (digitalRead(FRONT_RIGHT_PIN_INTERRUPT) == digitalRead(FRONT_RIGHT_PIN_CHECKER)) {
-		encoderFR.incrementCount();
-	}
-	else {
-		encoderFR.decrementCount();
-	}
+	encoderFR.checkEncoder();
 }
 
 void checkEncoderBL() {
-	if (digitalRead(BACK_LEFT_PIN_INTERRUPT) == digitalRead(BACK_LEFT_PIN_CHECKER)) {
-		encoderBL.decrementCount();
-	}
-	else {
-		encoderBL.incrementCount();
-	}
+	encoderBL.checkEncoderFlipped();
 }
 
 void checkEncoderBR() {
-	if (digitalRead(BACK_RIGHT_PIN_INTERRUPT) == digitalRead(BACK_RIGHT_PIN_CHECKER)) {
-		encoderBR.incrementCount();
-	}
-	else {
-		encoderBR.decrementCount();
-	}
+	encoderBR.checkEncoder();
 }
