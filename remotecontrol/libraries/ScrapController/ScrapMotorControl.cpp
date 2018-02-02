@@ -4,13 +4,9 @@ ScrapMotorControl::ScrapMotorControl() {
 	
 }
 
-ScrapMotorControl::ScrapMotorControl(ScrapMotor& mot, ScrapEncoder& enc) {
+ScrapMotorControl::ScrapMotorControl(ScrapMotorInterface& mot, ScrapEncoderInterface& enc) {
 	attachMotor(mot);
 	attachEncoder(enc);
-}
-
-float ScrapMotorControl::getSpeed() {
-	return prevSpeed;
 }
 
 float ScrapMotorControl::calcSpeed() {
@@ -25,7 +21,7 @@ float ScrapMotorControl::calcSpeed() {
 	unsigned long timeDelta = newTime - prevTime;
 	// avoid zero division; no time has passed anyway
 	if (timeDelta != 0) {
-		currSpeed = float(abs(newCount-prevCount))/float(timeDelta);
+		currSpeed = 1000000*(float(abs(newCount-prevCount))/float(timeDelta));
 	}
 	else {
 		currSpeed = prevSpeed;
@@ -54,14 +50,15 @@ float ScrapMotorControl::constrainFloat(float x, float min, float max) {
 }
 
 // convert encoder values per second into values per microsecond
-float ScrapMotorControl::convertToSpeed(int encPerSec) {
+/*float ScrapMotorControl::convertToSpeed(int encPerSec) {
 	// million microseconds in one second
 	return ((float)encPerSec)/1000000.0;
-}
+}*/
 
 void ScrapMotorControl::reset() {
 	speedGoal = 0;
 	motor->stop();
+	encoder->resetCount();
 	prevSpeed = 0;
 	prevCount = 0;
 	prevTime = 0;
@@ -69,6 +66,8 @@ void ScrapMotorControl::reset() {
 
 void ScrapMotorControl::stop() {
 	speedGoal = 0;
+	prevSpeed = 0;
+	motor->stop();
 }
 
 void ScrapMotorControl::setSpeed(float newSpeed) {
@@ -96,23 +95,33 @@ void ScrapMotorControl::performMovement() {
 		int powChange = 0;
 		// change power according to proportion of speeds
 		if (currSpeed < speedGoal) {
-			powChange = (int)mapFloat(speedGoal/currSpeed,1.0,2.0,1.0,6.0);
+			// avoid division by zero
+			if (currSpeed != 0) {
+				powChange = (int)mapFloat(speedGoal/currSpeed,1.0,2.0,1.0,6.0);
+			}
+			else {
+				powChange = 6;
+			}
 			motor->setPower(max(minPower,motor->getPower()+powChange));
 		}
 		else if (currSpeed > speedGoal) {
-			powChange = (int)mapFloat(currSpeed/speedGoal,1.0,2.0,1.0,6.0);
+			// avoid division by zero
+			if (currSpeed != 0) {
+				powChange = (int)mapFloat(currSpeed/speedGoal,1.0,2.0,1.0,6.0);
+			}
+			else {
+				powChange = 6;
+			}
 			motor->setPower(max(minPower,motor->getPower()-powChange));
 		}
 	}
 }
 
 // change speed by a speed diff not to exceed limits
-void ScrapMotorControl::incrementSpeed(int speedEncDiff) {
-	float speedDiff = convertToSpeed(speedEncDiff);
+void ScrapMotorControl::incrementSpeed(float speedDiff) {
 	speedGoal = min(maxSpeed,speedGoal+speedDiff);
 }
 
-void ScrapMotorControl::decrementSpeed(int speedEncDiff) {
-	float speedDiff = convertToSpeed(speedEncDiff);
+void ScrapMotorControl::decrementSpeed(float speedDiff) {
 	speedGoal = max(minSpeed,speedGoal-speedDiff);
 }

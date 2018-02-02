@@ -9,6 +9,9 @@ MechanumController::MechanumController(ScrapMotorControl& speed_FL, ScrapMotorCo
 	speedFR = &speed_FR;
 	speedBL = &speed_BL;
 	speedBR = &speed_BR;
+	setMinimumPower(minPower);
+	setMinimumSpeed(minEncSpeed);
+	setMaximumSpeed(maxEncSpeed);
 }
 
 
@@ -54,16 +57,16 @@ void MechanumController::inputControlValues() {
 	// if the raw values were negative, account for the mapping error
 	// FRONT LEFT
 	encValueFL = (abs(rawValueFL)/rawValueFL)*map(abs(rawValueFL),0,maxRawValue,minEncSpeed,maxEncSpeed);
-	speedFL->setControlEnc(encValueFL);
+	speedFL->setControl(encValueFL);
 	// FRONT RIGHT
 	encValueFR = (abs(rawValueFR)/rawValueFR)*map(abs(rawValueFR),0,maxRawValue,minEncSpeed,maxEncSpeed);
-	speedFR->setControlEnc(encValueFR);
+	speedFR->setControl(encValueFR);
 	// BACK LEFT
 	encValueBL = (abs(rawValueBL)/rawValueBL)*map(abs(rawValueBL),0,maxRawValue,minEncSpeed,maxEncSpeed);
-	speedBL->setControlEnc(encValueBL);
+	speedBL->setControl(encValueBL);
 	// BACK RIGHT
 	encValueBR = (abs(rawValueBR)/rawValueBR)*map(abs(rawValueBR),0,maxRawValue,minEncSpeed,maxEncSpeed);
-	speedBR->setControlEnc(encValueBR);
+	speedBR->setControl(encValueBR);
 	// print values for debug purposes
 	/*Serial.print(encValueFL);
 	Serial.print(" ");
@@ -102,5 +105,29 @@ void MechanumController::setRotate(long val) {
 		val -= deadzone;
 	}
 	rotate = val;
+}
+
+void MechanumController::setMinimumPower(int power) {
+	minPower = power;
+	speedFL->setMinPower(minPower);
+	speedFR->setMinPower(minPower);
+	speedBL->setMinPower(minPower);
+	speedBR->setMinPower(minPower);
+}
+
+void MechanumController::setMinimumSpeed(float speed) {
+	minEncSpeed = speed;
+	speedFL->setMinSpeed(minEncSpeed);
+	speedFR->setMinSpeed(minEncSpeed);
+	speedBL->setMinSpeed(minEncSpeed);
+	speedBR->setMinSpeed(minEncSpeed);
+}
+
+void MechanumController::setMaximumSpeed(float speed) {
+	maxEncSpeed = speed;
+	speedFL->setMaxSpeed(maxEncSpeed);
+	speedFR->setMaxSpeed(maxEncSpeed);
+	speedBL->setMaxSpeed(maxEncSpeed);
+	speedBR->setMaxSpeed(maxEncSpeed);
 }
 

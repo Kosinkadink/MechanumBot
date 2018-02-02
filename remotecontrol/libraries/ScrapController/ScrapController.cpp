@@ -6,53 +6,45 @@ ScrapController::ScrapController() {
 	
 }
 
-ScrapController::ScrapController(ScrapMotor& mot1, ScrapEncoder& enc1) {
-	attachMotor1(mot1);
-	attachEncoder1(enc1);
-	speedControl1 = ScrapMotorControl(*motor1,*encoder1);
-	speedControl1.setMinPower(minSlowPower);
-	speedControl1.setMinSpeed(speedControl1.convertToSpeed(minEncSpeed));
-	speedControl1.setMaxSpeed(speedControl1.convertToSpeed(maxEncSpeed));
+ScrapController::ScrapController(ScrapMotorControl& motorControl) {
+	speedControl = &motorControl;
 	stop();
 }
 
-ScrapController::ScrapController(ScrapMotor& mot1, ScrapEncoder& enc1, ScrapSwitch& swi1) {
-	attachMotor1(mot1);
-	attachEncoder1(enc1);
-	speedControl1 = ScrapMotorControl(*motor1,*encoder1);
-	speedControl1.setMinPower(minSlowPower);
-	speedControl1.setMinSpeed(speedControl1.convertToSpeed(minEncSpeed));
-	speedControl1.setMaxSpeed(speedControl1.convertToSpeed(maxEncSpeed));
-	attachSwitch1(swi1);
+ScrapController::ScrapController(ScrapMotor& mot, ScrapEncoder& enc) {
+	speedControl = new ScrapMotorControl(mot,enc);
+	stop();
+}
+
+ScrapController::ScrapController(ScrapMotor& mot, ScrapEncoder& enc, ScrapSwitch& swi) {
+	attachSwitch(swi);
+	speedControl = new ScrapMotorControl(mot,enc);
 	stop();
 }
 
 // move back until switches are activated
 bool ScrapController::performReset() {
-	speedControl1.stop();
-	motor1->setDirection(-1);
+	speedControl->stop();
 	// check if switch is pressed
-	if (switch1->getIfPressed()) {
-		speedControl1.stop();
-		encoder1->resetCount();
-		speedControl1.performMovement();
+	if (resetswitch->getIfPressed()) {
+		speedControl->reset();
 		return true;
 	}
 	else {
-		speedControl1.setSpeed(0.0011);
-		speedControl1.performMovement();
+		speedControl->setControl(-100);
+		speedControl->performMovement();
 		return false;
 	}
 }
 
-bool ScrapController::set(int g1) {
-	goal1 = g1;
+bool ScrapController::set(long g) {
+	goal = g;
 	return checkIfDone();
 }
 
 void ScrapController::stop() {
-	speedControl1.stop();
-	speedControl1.performMovement();
+	speedControl->stop();
+	speedControl->performMovement();
 }
 
 bool ScrapController::performMovement() {
@@ -62,47 +54,38 @@ bool ScrapController::performMovement() {
 	}
 	//else, gotta do stuff
 	else {
-		if (encoder1->getCount() < goal1) {
-			speedControl1.setControl(calcSpeed1());
+		if (speedControl->getCount() < goal) {
+			speedControl->setControl(calcSpeed());
 		}
 		else {
-			speedControl1.setControl(-calcSpeed1());
+			speedControl->setControl(-calcSpeed());
 		}
 	}
-	speedControl1.performMovement();
+	speedControl->performMovement();
 	return false;
 }
 
 // calculate speed to give motor
-float ScrapController::calcSpeed1() {
-	int diff = getDiff1();
-	return speedControl1.convertToSpeed(map(diff,1,slowdownThresh,minEncSpeed,maxEncSpeed));
+float ScrapController::calcSpeed() {
+	long diff = getDiff();
+	return speedControl->mapFloat(diff,1,slowdownThresh,minEncSpeed,maxEncSpeed);
 }
 
-int ScrapController::getDiff1() {
-	return abs(encoder1->getCount() - goal1);
+long ScrapController::getDiff() {
+	return abs(speedControl->getCount() - goal);
 }
 
 // increment or decrement speed
-void ScrapController::incrementSpeed(int speedEncDiff) {
-	speedControl1.incrementSpeed(speedEncDiff);
+void ScrapController::incrementSpeed(float speedEncDiff) {
+	speedControl->incrementSpeed(speedEncDiff);
 }
 
-void ScrapController::decrementSpeed(int speedEncDiff) {
-	speedControl1.decrementSpeed(speedEncDiff);
+void ScrapController::decrementSpeed(float speedEncDiff) {
+	speedControl->decrementSpeed(speedEncDiff);
 }
 
 
 // check if encoder count is within tolerance of goal
-bool ScrapController::checkIfDone1() {
-	return (encoder1->getCount() >= goal1 - encTolerance ) && (encoder1->getCount() <= goal1 + encTolerance );
-}
-
-// attach motors + encoders to be used
-void ScrapController::attachMotor1(ScrapMotor& mot) {
-	motor1 = &mot;
-}
-
-void ScrapController::attachEncoder1(ScrapEncoder& enc) {
-	encoder1 = &enc;
+bool ScrapController::checkIfDone() {
+	return (speedControl->getCount() >= goal - encTolerance ) && (speedControl->getCount() <= goal + encTolerance );
 }

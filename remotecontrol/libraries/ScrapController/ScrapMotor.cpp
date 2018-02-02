@@ -9,7 +9,7 @@ ScrapMotor::ScrapMotor(int PinD1, int PinD2, int PinPWM, int dirMultip) {
 	initMotor();
 }
 
-// init motor pins and make sure they are not moving
+// initMotor: init motor pins and make sure they are not moving
 void ScrapMotor::initMotor() {
 	pinMode(PIN_D1,OUTPUT);
 	pinMode(PIN_D2,OUTPUT);
@@ -18,13 +18,13 @@ void ScrapMotor::initMotor() {
 	setPower(0);
 }
 
-// set corresponding direction + power
+// setMotor: set corresponding direction + power
 void ScrapMotor::setMotor(int pwm) {
 	setDirection(pwm);
 	setPower(abs(pwm));
 }
 
-// set direction multiplier (lets you flip direction)
+// setDirectionMultiplier: set direction multiplier (lets you flip direction)
 void ScrapMotor::setDirectionMultiplier(int multi) {
 	if (multi > 0) {
 		powerMultiplier = 1; 
@@ -35,7 +35,7 @@ void ScrapMotor::setDirectionMultiplier(int multi) {
 	// do nothing is zero
 }
 
-// set direction based on sign of number
+// setDirection: set direction based on sign of number
 void ScrapMotor::setDirection(int pwm) {
 	pwm *= powerMultiplier;
 	if (pwm > 0) {
@@ -55,24 +55,24 @@ void ScrapMotor::setDirection(int pwm) {
 	}
 }
 
-// return direction: 1, 0, or -1
+// getDirection: return direction: 1, 0, or -1
 int ScrapMotor::getDirection() {
 	return currDir;
 }
 
-// set power (PWM) - make sure is in valid range
+// setPower: set power (PWM) - make sure is in valid range
 void ScrapMotor::setPower(int pwm) {
 	pwm = max(0,min(255,pwm));
 	analogWrite(PIN_PWM,pwm);
 	currPower = pwm;
 }
 
-// return current power (PWM)
+// getPower: return current power (PWM)
 int ScrapMotor::getPower() {
 	return currPower;
 }
 
-// stop the motor
+// stop: stop the motor
 void ScrapMotor::stop() {
 	setMotor(0);
 }

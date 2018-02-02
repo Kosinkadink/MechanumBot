@@ -6,8 +6,9 @@
 
 class MechanumController {
 	private:
-		int minEncSpeed = 100;
-		int maxEncSpeed = 2500;
+		float minEncSpeed = 100;
+		float maxEncSpeed = 2500;
+		int minPower = 50;
 		long translate_x = 0;
 		long translate_y = 0;
 		long rotate = 0;
@@ -29,6 +30,9 @@ class MechanumController {
 		void setRotate(long val);
 		void performMovement();
 		void inputControlValues();
+		void setMinimumPower(int power);
+		void setMinimumSpeed(float speed);
+		void setMaximumSpeed(float speed);
 		void setMaximumValue(long value) { maximum_val = value; };
 		void setDeadzone(long value) { deadzone = value; };
 
